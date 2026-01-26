@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://board.me/schema/tag",
+  "title": "Tag",
+  "description": "A tag for issue",
+  "type": "object",
+  "properties": {
+    "id" : {
+        "description": "Id of a tag",
+        "type" : "string"
+    },
+    "name" : {
+        "description": "Name of a tag",
+        "type" : "string"
+    },
+    "icon" : {
+        "description": "Icon of a tag",
+        "type" : ["string","null"]
+    },
+    "color" : {
+        "description": "color of a tag",
+        "type" : ["string","null"]
+    },
+        "createdAt" : {
+        "description": "Creation date",
+        "type" : "string" 
+    },
+    "updatedAt" : {
+        "description": "Update date",
+        "type" : ["string","null"] 
+    },
+    "archivedAt" : {
+        "description": "Archive date",
+        "type" : ["string","null"] 
+    }
+  },
+  "required": ["id","name"]
+}
+
