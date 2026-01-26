@@ -1,3 +1,4 @@
+import { BoardDebug } from "@/dev/board-debug";
 import Board from "../features/board/board";
 import CustomSidebarToggle from "../features/nav/custom-sidebar-toggler";
 
@@ -10,7 +11,7 @@ export default function Layout() {
       </div>
       <div className="flex items-center h-32 rounded-xl gap-4">
         <div className="flex flex-1  bg-zinc-600/10 h-full rounded-xl items-center justify-center">
-          Options
+          <BoardDebug />
         </div>
         <div className="flex flex-1 bg-zinc-600/10 h-full rounded-xl items-center justify-center">
           Options
