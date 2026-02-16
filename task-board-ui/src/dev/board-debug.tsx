@@ -2,18 +2,16 @@ import { Button } from "@/components/ui/button";
 import { useBoardStore } from "@/store/board-store";
 
 export function BoardDebug() {
-  const board = useBoardStore((s) => s.board);
-
   const addColumn = useBoardStore((s) => s.addColumn);
   const addIssue = useBoardStore((s) => s.addIssue);
-  const moveColumn = useBoardStore((s) => s.moveColumn);
-  const moveIssue = useBoardStore((s) => s.moveIssue);
+
+  let number = 1;
 
   return (
     <div className="flex gap-2">
       <Button
         onClick={() => {
-          addIssue({ title: "Thats an issue for sure" });
+          addIssue({ title: "KURWA" });
         }}
       >
         Add Issue

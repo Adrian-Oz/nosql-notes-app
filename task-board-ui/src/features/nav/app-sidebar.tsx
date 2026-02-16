@@ -31,7 +31,10 @@ const items = [
 
 export function AppSidebar() {
   return (
-    <Sidebar variant="floating" collapsible="icon" className="bg-none">
+    <Sidebar
+      collapsible="icon"
+      className="bg-(--surface-1) border-r border-white/5"
+    >
       <SidebarContent className="">
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>

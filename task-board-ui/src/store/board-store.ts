@@ -18,7 +18,17 @@ type BoardState = {
     priority?: number;
     color?: string | null;
   }) => void;
+  // reorderIssueInColumn: (input: {
+  //   columnId: string;
+  //   oldIndex: number;
+  //   newIndex: number;
+  // }) => void;
 
+  // moveIssueBetweenColumns(input: {
+  //   issueId: string;
+  //   fromColumnId: string;
+  //   toColumnId: string;
+  // }): void;
   moveIssue: (input: {
     issueId: string;
     fromColumnId: string;
@@ -62,25 +72,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return { board: nextBoard };
     });
   },
-  moveColumn: ({ oldIndex, newIndex }) => {
-    set((state) => {
-      const board = state.board;
-      const order = board.columnOrder;
 
-      if (oldIndex === newIndex) return state;
-
-      const newOrder = [...order];
-      const [moved] = newOrder.splice(oldIndex, 1);
-      newOrder.splice(newIndex, 0, moved);
-
-      return {
-        board: {
-          ...board,
-          columnOrder: newOrder,
-        },
-      };
-    });
-  },
   addIssue: ({
     title,
     columnId,
@@ -129,6 +121,71 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return { board: nextBoard };
     });
   },
+  moveColumn: ({ oldIndex, newIndex }) => {
+    set((state) => {
+      const board = state.board;
+      const order = board.columnOrder;
+
+      if (oldIndex === newIndex) return state;
+
+      const newOrder = [...order];
+      const [moved] = newOrder.splice(oldIndex, 1);
+      newOrder.splice(newIndex, 0, moved);
+
+      return {
+        board: {
+          ...board,
+          columnOrder: newOrder,
+        },
+      };
+    });
+  },
+  // reorderIssueInColumn: ({ columnId, oldIndex, newIndex }) =>
+  //   set((state) => {
+  //     const oldBoard = state.board;
+  //     const order = state.board.issueOrderByColumn[columnId];
+  //     const newOrder = [...order];
+  //     const [moved] = newOrder.splice(oldIndex, 1);
+  //     newOrder.splice(newIndex, 0, moved);
+
+  //     return {
+  //       board: {
+  //         ...oldBoard,
+  //         issueOrderByColumn: {
+  //           ...state.board.issueOrderByColumn,
+  //           [columnId]: newOrder,
+  //         },
+  //       },
+  //     };
+  //   }),
+  // moveIssueBetweenColumns: ({ issueId, fromColumnId, toColumnId }) =>
+  //   set((state) => {
+  //     const oldBoard = state.board;
+  //     const issue = oldBoard.issues[issueId];
+
+  //     const nextSourceOrder = oldBoard.issueOrderByColumn[fromColumnId].filter(
+  //       (id) => id !== issueId,
+  //     );
+
+  //     const nextTargetOrder = [
+  //       ...oldBoard.issueOrderByColumn[toColumnId],
+  //       issueId,
+  //     ];
+  //     return {
+  //       board: {
+  //         ...oldBoard,
+  //         issues: {
+  //           ...oldBoard.issues,
+  //           [issueId]: { ...issue, columnId: toColumnId },
+  //         },
+  //         issueOrderByColumn: {
+  //           ...oldBoard.issueOrderByColumn,
+  //           [fromColumnId]: nextSourceOrder,
+  //           [toColumnId]: nextTargetOrder,
+  //         },
+  //       },
+  //     };
+  //   }),
   moveIssue: ({ issueId, fromColumnId, toColumnId, toIndex }) => {
     set((state) => {
       const board = state.board;
@@ -136,17 +193,37 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       const sourceOrder = board.issueOrderByColumn[fromColumnId] ?? [];
       const destinationOrder = board.issueOrderByColumn[toColumnId] ?? [];
 
-      // Remove from source
+      // SAME COLUMN MOVE
+      if (fromColumnId === toColumnId) {
+        const newOrder = [...sourceOrder];
+
+        const oldIndex = newOrder.indexOf(issueId);
+        if (oldIndex === -1) return state;
+        if (oldIndex === toIndex) return state;
+
+        newOrder.splice(oldIndex, 1);
+        newOrder.splice(toIndex, 0, issueId);
+
+        return {
+          board: {
+            ...board,
+            issueOrderByColumn: {
+              ...board.issueOrderByColumn,
+              [fromColumnId]: newOrder,
+            },
+          },
+        };
+      }
+
+      // CROSS COLUMN MOVE
       const nextSourceOrder = sourceOrder.filter((id) => id !== issueId);
 
-      // Insert into destination
       const nextDestinationOrder = [...destinationOrder];
       nextDestinationOrder.splice(toIndex, 0, issueId);
 
       return {
         board: {
           ...board,
-
           issues: {
             ...board.issues,
             [issueId]: {
@@ -154,7 +231,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
               columnId: toColumnId,
             },
           },
-
           issueOrderByColumn: {
             ...board.issueOrderByColumn,
             [fromColumnId]: nextSourceOrder,
