@@ -9,6 +9,7 @@ import {
 import BoardIssue from "./board-issue";
 import clsx from "clsx";
 import { useBoardStore } from "@/store/board-store";
+import AddIssueForm from "./add-issue-form";
 
 export default function BoardColumn({
   column,
@@ -18,6 +19,7 @@ export default function BoardColumn({
   issueIds: string[];
 }) {
   const issues = useBoardStore((s) => s.board.issues);
+  const addIssue = useBoardStore((s) => s.addIssue);
   const {
     attributes,
     setNodeRef,
@@ -63,6 +65,11 @@ export default function BoardColumn({
           })}
         </div>
       </SortableContext>
+      <AddIssueForm
+        onSubmit={(data) => {
+          addIssue({ ...data, columnId: column.id });
+        }}
+      />
     </div>
   );
 }

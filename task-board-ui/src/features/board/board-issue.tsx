@@ -43,7 +43,7 @@ export default function BoardIssue({
       <div className="w-full flex items-center gap-2 text-primary/60">
         <div className="flex gap-0.5 items-center">
           <CircleDotIcon size={12} />
-          <p className="text-sm">{issue.id}</p>
+          <p className="text-sm">{issue.title ?? issue.id}</p>
         </div>
         <Button size="sm" variant="ghost">
           <Ellipsis />
