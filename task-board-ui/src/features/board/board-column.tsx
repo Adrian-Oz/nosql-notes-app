@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Ellipsis, Squircle } from "lucide-react";
+import { Ellipsis, Ghost, Squircle } from "lucide-react";
 import { CSS } from "@dnd-kit/utilities";
 import {
   SortableContext,
@@ -9,7 +9,6 @@ import {
 import BoardIssue from "./board-issue";
 import clsx from "clsx";
 import { useBoardStore } from "@/store/board-store";
-import AddIssueForm from "./add-issue-form";
 
 export default function BoardColumn({
   column,
@@ -19,7 +18,7 @@ export default function BoardColumn({
   issueIds: string[];
 }) {
   const issues = useBoardStore((s) => s.board.issues);
-  const addIssue = useBoardStore((s) => s.addIssue);
+  const openCreateIssue = useBoardStore((s) => s.openCreateIssue);
   const {
     attributes,
     setNodeRef,
@@ -47,7 +46,7 @@ export default function BoardColumn({
       }}
     >
       <div className="w-full flex items-center p-2 justify-between border-b">
-        <div className="flex gap-1 items-center" {...listeners}>
+        <div className="flex gap-1 items-center cursor-grab" {...listeners}>
           <Squircle />
           <p className="text-xl">{column.name}</p>
         </div>
@@ -65,11 +64,9 @@ export default function BoardColumn({
           })}
         </div>
       </SortableContext>
-      <AddIssueForm
-        onSubmit={(data) => {
-          addIssue({ ...data, columnId: column.id });
-        }}
-      />
+      <Button variant={"ghost"} onClick={() => openCreateIssue(column.id)}>
+        Add Issue
+      </Button>
     </div>
   );
 }

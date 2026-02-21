@@ -7,9 +7,22 @@ import type { Issue } from "@/types/issue";
 
 type BoardState = {
   board: Board;
+  issueDialog: {
+    mode: "create" | "edit" | null;
+    issueId?: string;
+    targetColumnId?: string;
+  };
   createBoard: (name: string) => void;
   addColumn: (input: { name: string; color?: string | null }) => void;
   moveColumn: (input: { oldIndex: number; newIndex: number }) => void;
+  openCreateIssue: (columnId: string) => void;
+  openEditIssue: (issueId: string) => void;
+  closeIssueDialog: () => void;
+  editIssue: (input: {
+    issueId: string;
+    title?: string;
+    body?: string | null;
+  }) => void;
   addIssue: (input: {
     title: string;
     columnId?: string;
@@ -18,17 +31,6 @@ type BoardState = {
     priority?: number;
     color?: string | null;
   }) => void;
-  // reorderIssueInColumn: (input: {
-  //   columnId: string;
-  //   oldIndex: number;
-  //   newIndex: number;
-  // }) => void;
-
-  // moveIssueBetweenColumns(input: {
-  //   issueId: string;
-  //   fromColumnId: string;
-  //   toColumnId: string;
-  // }): void;
   moveIssue: (input: {
     issueId: string;
     fromColumnId: string;
@@ -39,11 +41,36 @@ type BoardState = {
 
 export const useBoardStore = create<BoardState>((set, get) => ({
   board: createEmptyBoard("Untitled"),
+  issueDialog: {
+    mode: null,
+  },
   createBoard: (name: string) => {
     set({
       board: createEmptyBoard(name),
     });
   },
+  openCreateIssue: (columnId) =>
+    set({
+      issueDialog: {
+        mode: "create",
+        targetColumnId: columnId,
+        issueId: undefined,
+      },
+    }),
+  openEditIssue: (issueId) =>
+    set({
+      issueDialog: {
+        mode: "edit",
+        issueId,
+        targetColumnId: undefined,
+      },
+    }),
+  closeIssueDialog: () =>
+    set({
+      issueDialog: {
+        mode: null,
+      },
+    }),
   addColumn: ({ name, color = null }) => {
     set((state) => {
       const id = crypto.randomUUID();
@@ -119,6 +146,28 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       };
 
       return { board: nextBoard };
+    });
+  },
+  editIssue: ({ issueId, title, body }) => {
+    set((state) => {
+      const board = state.board;
+      const issue = board.issues[issueId];
+      if (!issue) return state;
+      const now = new Date().toISOString();
+      return {
+        board: {
+          ...board,
+          issues: {
+            ...board.issues,
+            [issueId]: {
+              ...issue,
+              ...(title !== undefined && { title }),
+              ...(body !== undefined && { body }),
+              updatedAt: now,
+            },
+          },
+        },
+      };
     });
   },
   moveColumn: ({ oldIndex, newIndex }) => {

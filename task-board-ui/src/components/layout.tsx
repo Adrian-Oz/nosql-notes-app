@@ -3,7 +3,7 @@ import Board from "../features/board/board";
 import CustomSidebarToggle from "../features/nav/custom-sidebar-toggler";
 
 import { Toaster } from "sonner";
-import AddIssueForm from "@/features/board/add-issue-form";
+import AddIssueForm from "@/features/board/issue-dialog";
 
 export default function Layout() {
   return (
@@ -11,7 +11,7 @@ export default function Layout() {
       <div className="flex items-center h-12  rounded-xl relative">
         <CustomSidebarToggle />
         <Toaster />
-
+        <AddIssueForm />
         {/* header */}
       </div>
       <div className="flex items-center h-32 rounded-xl gap-4">
