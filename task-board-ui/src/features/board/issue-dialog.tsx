@@ -16,29 +16,32 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import type { CreateIssueInput } from "@/types/issue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useBoardStore } from "@/store/board-store";
+import { useEffect } from "react";
+
+// Form Schema
 const addIssueSchema = z.object({
   title: z
     .string()
     .min(5, "Title must be at least 5 characters")
     .max(32, "Title must be at most 32 characters."),
-  body: z
-    .string()
-    .min(5, "Desription must be at least 5 characters")
-    .max(150, "Why are you making a book here ? "),
+  body: z.string().max(150),
 });
-export default function AddIssueForm({
-  onSubmit,
-}: {
-  onSubmit: (data: CreateIssueInput) => void;
-}) {
-  const [open, setOpen] = useState(false);
+
+// FUNCTION
+export default function IssueDialog() {
+  const { mode, issueId, targetColumnId } = useBoardStore((s) => s.issueDialog);
+  const board = useBoardStore((s) => s.board);
+
+  //store actions
+  const editIssue = useBoardStore((s) => s.editIssue);
+  const addIssue = useBoardStore((s) => s.addIssue);
+  const close = useBoardStore((s) => s.closeIssueDialog);
 
   const form = useForm({
     defaultValues: {
@@ -49,25 +52,66 @@ export default function AddIssueForm({
       onSubmit: addIssueSchema,
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value);
-      toast.success("Issue added ? Maybe ? I have no idea");
+      if (mode === "create") {
+        if (!targetColumnId) return;
+
+        addIssue({
+          ...value,
+          columnId: targetColumnId,
+        });
+
+        toast.success("Issue created");
+      }
+
+      if (mode === "edit" && issueId) {
+        editIssue({
+          issueId,
+          ...value,
+        });
+
+        toast.success("Issue updated");
+      }
+
       form.reset();
-      setOpen(false);
+      close();
     },
   });
+  useEffect(() => {
+    if (mode === "edit" && issueId) {
+      const issue = board.issues[issueId];
+      if (!issue) return;
+
+      form.setFieldValue("title", issue.title);
+      form.setFieldValue("body", issue.body ?? "");
+    }
+
+    if (mode === "create") {
+      form.reset();
+    }
+  }, [mode, issueId, board]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-(--surface-4) text-white hover:text-black">
-          Add Issue
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent className="sm:max-w-[500px] bg-(--surface-3)">
+    <Dialog
+      open={mode === "create" || mode === "edit"}
+      onOpenChange={(open) => {
+        if (!open) {
+          form.reset();
+          close();
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-125 bg-(--surface-3)">
         <DialogHeader>
-          <DialogTitle>Create Issue</DialogTitle>
-          <DialogDescription>Add a new issue to the board.</DialogDescription>
+          <DialogTitle>
+            {mode === "edit" ? "Edit Issue" : "Create Issue"}
+          </DialogTitle>
+          <DialogDescription>
+            <DialogDescription>
+              {mode === "edit"
+                ? "Update issue details."
+                : "Add a new issue to the board."}
+            </DialogDescription>
+          </DialogDescription>
         </DialogHeader>
 
         <form
@@ -144,7 +188,7 @@ export default function AddIssueForm({
 
         <DialogFooter>
           <Button type="submit" form="add-issue-form">
-            Add Issue
+            {mode === "edit" ? "Save Changes" : "Add Issue"}
           </Button>
         </DialogFooter>
       </DialogContent>

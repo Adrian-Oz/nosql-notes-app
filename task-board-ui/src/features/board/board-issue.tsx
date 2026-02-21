@@ -3,6 +3,15 @@ import { CircleDotIcon, Ellipsis } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import clsx from "clsx";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useBoardStore } from "@/store/board-store";
 export default function BoardIssue({
   issue,
 }: {
@@ -13,6 +22,7 @@ export default function BoardIssue({
     columnId: string | null;
   };
 }) {
+  const openEditIssue = useBoardStore((s) => s.openEditIssue);
   const {
     attributes,
     setNodeRef,
@@ -38,16 +48,32 @@ export default function BoardIssue({
         transition,
         transform: CSS.Translate.toString(transform),
       }}
-      {...listeners}
     >
       <div className="w-full flex items-center gap-2 text-primary/60">
-        <div className="flex gap-0.5 items-center">
+        <div className="flex gap-0.5 items-center cursor-grab " {...listeners}>
           <CircleDotIcon size={12} />
           <p className="text-sm">{issue.title ?? issue.id}</p>
         </div>
-        <Button size="sm" variant="ghost">
-          <Ellipsis />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="hover">
+              <Ellipsis />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-(--surface-3)">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>This Issue</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => {
+                  openEditIssue(issue.id);
+                }}
+              >
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem>Delete</DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="p-2 border rounded-md h-full items-center flex justify-center">

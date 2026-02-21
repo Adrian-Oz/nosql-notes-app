@@ -6,7 +6,7 @@ import Layout from "./components/layout";
 
 function App() {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="absolute inset-0 bg-background -z-10" />
       <AppSidebar />
       <main className="w-full overflow-y-hidden">
