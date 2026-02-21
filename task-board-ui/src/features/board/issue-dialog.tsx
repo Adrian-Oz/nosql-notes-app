@@ -17,7 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import type { CreateIssueInput } from "@/types/issue";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -105,12 +105,11 @@ export default function IssueDialog() {
           <DialogTitle>
             {mode === "edit" ? "Edit Issue" : "Create Issue"}
           </DialogTitle>
+
           <DialogDescription>
-            <DialogDescription>
-              {mode === "edit"
-                ? "Update issue details."
-                : "Add a new issue to the board."}
-            </DialogDescription>
+            {mode === "edit"
+              ? "Update issue details."
+              : "Add a new issue to the board."}
           </DialogDescription>
         </DialogHeader>
 

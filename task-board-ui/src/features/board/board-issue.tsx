@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useBoardStore } from "@/store/board-store";
+import { toast } from "sonner";
 export default function BoardIssue({
   issue,
 }: {
@@ -23,6 +24,7 @@ export default function BoardIssue({
   };
 }) {
   const openEditIssue = useBoardStore((s) => s.openEditIssue);
+  const deleteIssue = useBoardStore((s) => s.deleteIssue);
   const {
     attributes,
     setNodeRef,
@@ -70,7 +72,14 @@ export default function BoardIssue({
               >
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem>Delete</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  deleteIssue(issue.id);
+                  toast.success("Issue Deleted");
+                }}
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>

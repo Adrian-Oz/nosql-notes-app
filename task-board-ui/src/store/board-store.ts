@@ -18,6 +18,7 @@ type BoardState = {
   openCreateIssue: (columnId: string) => void;
   openEditIssue: (issueId: string) => void;
   closeIssueDialog: () => void;
+  deleteIssue: (issueId: string) => void;
   editIssue: (input: {
     issueId: string;
     title?: string;
@@ -148,6 +149,33 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return { board: nextBoard };
     });
   },
+  deleteIssue: (issueId) =>
+    set((state) => {
+      const board = state.board;
+      const issue = board.issues[issueId];
+      if (!issue) return state;
+
+      const columnId = issue.columnId;
+      if (!columnId) return state;
+
+      // Remove from issues dictionary
+      const { [issueId]: _, ...remainingIssues } = board.issues;
+
+      // Remove from column order
+      const currentOrder = board.issueOrderByColumn[columnId] ?? [];
+      const newOrder = currentOrder.filter((id) => id !== issueId);
+
+      return {
+        board: {
+          ...board,
+          issues: remainingIssues,
+          issueOrderByColumn: {
+            ...board.issueOrderByColumn,
+            [columnId]: newOrder,
+          },
+        },
+      };
+    }),
   editIssue: ({ issueId, title, body }) => {
     set((state) => {
       const board = state.board;
