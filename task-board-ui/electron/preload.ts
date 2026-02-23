@@ -1,5 +1,7 @@
-// electron/preload.ts
+//Preload
+const { contextBridge, ipcRenderer } = require("electron");
 
-import { contextBridge } from "electron";
-
-contextBridge.exposeInMainWorld("api", {});
+contextBridge.exposeInMainWorld("api", {
+  loadBoard: () => ipcRenderer.invoke("board:load"),
+  saveBoard: (board: unknown) => ipcRenderer.invoke("board:save", board),
+});

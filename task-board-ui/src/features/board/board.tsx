@@ -24,7 +24,7 @@ import { useState } from "react";
 
 export default function Board() {
   const board = useBoardStore((s) => s.board);
-
+  if (!board) return null;
   const [activeDrag, setActiveDrag] = useState<{
     id: string;
     type: "issue" | "column";
@@ -50,12 +50,14 @@ export default function Board() {
     if (!over) return;
 
     const { board, moveIssue, moveColumn } = useBoardStore.getState();
+    if (!board) return null;
     // handle issues sorting
     //When in the same container :
 
     if (
       active.data.current?.type === "column" &&
-      over.data.current?.type === "column"
+      over.data.current?.type === "column" &&
+      board
     ) {
       const oldIndex = board.columnOrder.indexOf(active.id as string);
       const newIndex = board.columnOrder.indexOf(over.id as string);

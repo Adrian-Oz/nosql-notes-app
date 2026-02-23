@@ -6,12 +6,14 @@ import type { Column } from "@/types/column";
 import type { Issue } from "@/types/issue";
 
 type BoardState = {
-  board: Board;
+  board: Board | null;
+  isHydrated: boolean;
   issueDialog: {
     mode: "create" | "edit" | null;
     issueId?: string;
     targetColumnId?: string;
   };
+  hydrate: (board: Board) => void;
   createBoard: (name: string) => void;
   addColumn: (input: { name: string; color?: string | null }) => void;
   moveColumn: (input: { oldIndex: number; newIndex: number }) => void;
@@ -41,13 +43,21 @@ type BoardState = {
 };
 
 export const useBoardStore = create<BoardState>((set, get) => ({
-  board: createEmptyBoard("Untitled"),
+  board: null,
+  isHydrated: false,
   issueDialog: {
     mode: null,
   },
-  createBoard: (name: string) => {
+  hydrate: (board: Board) => {
+    set({
+      board,
+      isHydrated: true,
+    });
+  },
+  createBoard: (name) => {
     set({
       board: createEmptyBoard(name),
+      isHydrated: true,
     });
   },
   openCreateIssue: (columnId) =>
@@ -84,7 +94,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         updatedAt: null,
         archivedAt: null,
       };
-      const board = state.board;
+      const board = assertBoard(state.board);
       const nextBoard: Board = {
         ...board,
         columns: {
@@ -109,17 +119,17 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     priority = 1,
     color = null,
   }) => {
-    // this ensures that board have at least 1 column , and created issue is visible to the user.
-    const { board, addColumn } = get();
-    if (board.columnOrder.length == 0) {
-      addColumn({ name: "Backlog" });
-    }
-    const { board: updatedBoard } = get();
-    const targetColumnId = columnId ?? updatedBoard.columnOrder[0];
+    const { board } = get();
+    const safeBoard = assertBoard(board);
+
+    const targetColumnId = columnId ?? safeBoard.columnOrder[0];
+
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
 
     set((state) => {
+      const board = assertBoard(state.board);
+
       const issue: Issue = {
         id,
         title,
@@ -133,25 +143,27 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         updatedAt: null,
         archivedAt: null,
       };
-      const curBoard = state.board;
-      const currentOrder = state.board.issueOrderByColumn[`${targetColumnId}`];
-      const newOrderByColumn = [...currentOrder];
-      newOrderByColumn.push(issue.id);
-      const nextBoard: Board = {
-        ...curBoard,
-        issues: { ...curBoard.issues, [id]: issue },
-        issueOrderByColumn: {
-          ...curBoard.issueOrderByColumn,
-          [targetColumnId]: newOrderByColumn,
+
+      const currentOrder = board.issueOrderByColumn[targetColumnId] ?? [];
+
+      return {
+        board: {
+          ...board,
+          issues: {
+            ...board.issues,
+            [id]: issue,
+          },
+          issueOrderByColumn: {
+            ...board.issueOrderByColumn,
+            [targetColumnId]: [...currentOrder, id],
+          },
         },
       };
-
-      return { board: nextBoard };
     });
   },
   deleteIssue: (issueId) =>
     set((state) => {
-      const board = state.board;
+      const board = assertBoard(state.board);
       const issue = board.issues[issueId];
       if (!issue) return state;
 
@@ -178,7 +190,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }),
   editIssue: ({ issueId, title, body }) => {
     set((state) => {
-      const board = state.board;
+      const board = assertBoard(state.board);
       const issue = board.issues[issueId];
       if (!issue) return state;
       const now = new Date().toISOString();
@@ -200,7 +212,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   },
   moveColumn: ({ oldIndex, newIndex }) => {
     set((state) => {
-      const board = state.board;
+      const board = assertBoard(state.board);
       const order = board.columnOrder;
 
       if (oldIndex === newIndex) return state;
@@ -217,55 +229,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       };
     });
   },
-  // reorderIssueInColumn: ({ columnId, oldIndex, newIndex }) =>
-  //   set((state) => {
-  //     const oldBoard = state.board;
-  //     const order = state.board.issueOrderByColumn[columnId];
-  //     const newOrder = [...order];
-  //     const [moved] = newOrder.splice(oldIndex, 1);
-  //     newOrder.splice(newIndex, 0, moved);
-
-  //     return {
-  //       board: {
-  //         ...oldBoard,
-  //         issueOrderByColumn: {
-  //           ...state.board.issueOrderByColumn,
-  //           [columnId]: newOrder,
-  //         },
-  //       },
-  //     };
-  //   }),
-  // moveIssueBetweenColumns: ({ issueId, fromColumnId, toColumnId }) =>
-  //   set((state) => {
-  //     const oldBoard = state.board;
-  //     const issue = oldBoard.issues[issueId];
-
-  //     const nextSourceOrder = oldBoard.issueOrderByColumn[fromColumnId].filter(
-  //       (id) => id !== issueId,
-  //     );
-
-  //     const nextTargetOrder = [
-  //       ...oldBoard.issueOrderByColumn[toColumnId],
-  //       issueId,
-  //     ];
-  //     return {
-  //       board: {
-  //         ...oldBoard,
-  //         issues: {
-  //           ...oldBoard.issues,
-  //           [issueId]: { ...issue, columnId: toColumnId },
-  //         },
-  //         issueOrderByColumn: {
-  //           ...oldBoard.issueOrderByColumn,
-  //           [fromColumnId]: nextSourceOrder,
-  //           [toColumnId]: nextTargetOrder,
-  //         },
-  //       },
-  //     };
-  //   }),
   moveIssue: ({ issueId, fromColumnId, toColumnId, toIndex }) => {
     set((state) => {
-      const board = state.board;
+      const board = assertBoard(state.board);
 
       const sourceOrder = board.issueOrderByColumn[fromColumnId] ?? [];
       const destinationOrder = board.issueOrderByColumn[toColumnId] ?? [];
@@ -318,3 +284,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     });
   },
 }));
+
+function assertBoard(board: Board | null): Board {
+  if (!board) {
+    throw new Error("Board not hydrated");
+  }
+  return board;
+}

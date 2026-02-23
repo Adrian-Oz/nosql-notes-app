@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Production builds
+dist/
+dist-electron/
+release/
+
+# Electron builder cache (optional but clean)
+node_modules/.cache/
