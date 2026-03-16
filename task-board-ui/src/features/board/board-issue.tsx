@@ -85,7 +85,7 @@ export default function BoardIssue({
         </DropdownMenu>
       </div>
 
-      <div className="p-2 border rounded-md h-full items-center flex justify-center">
+      <div className="p-2 border rounded-md h-16  text-sm  overflow-auto  ">
         {issue.body ?? "No description"}
       </div>
     </div>

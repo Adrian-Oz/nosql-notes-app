@@ -4,6 +4,35 @@ import { create } from "zustand";
 import type { Column } from "@/types/column";
 
 import type { Issue } from "@/types/issue";
+import type { TagOperationResult, Tag } from "@/types/tag";
+//Helpers.
+const validateTagName = (name: string, board: Board, tagID?: string) => {
+  let result: TagOperationResult = { success: true };
+  const normalizedName = name.toLowerCase().trim();
+  if (normalizedName === "") {
+    result = {
+      success: false,
+      errorType: "empty",
+      error: "Name cannot be an empty string.",
+    };
+    return result;
+  }
+  const tags = Object.values(board.tags);
+  if (
+    tags.some(
+      (tag) =>
+        tag.name.toLowerCase().trim() === normalizedName && tag.id !== tagID,
+    )
+  ) {
+    result = {
+      success: false,
+      errorType: "exist",
+      error: "Name already exist ",
+    };
+    return result;
+  }
+  return result;
+};
 
 type BoardState = {
   board: Board;
@@ -13,8 +42,15 @@ type BoardState = {
     targetColumnId?: string;
   };
   createBoard: (name: string) => void;
+  // column logic
   addColumn: (input: { name: string; color?: string | null }) => void;
   moveColumn: (input: { oldIndex: number; newIndex: number }) => void;
+  // Tags Logic
+  addTag: (name: string) => TagOperationResult;
+  shallowDeleteTag: (tagId: string) => TagOperationResult;
+  attachTag: (input: { tagId: string; issueId: string }) => TagOperationResult;
+  detachTag: (input: { tagId: string; issueId: string }) => TagOperationResult;
+  // issue logic
   openCreateIssue: (columnId: string) => void;
   openEditIssue: (issueId: string) => void;
   closeIssueDialog: () => void;
@@ -28,7 +64,7 @@ type BoardState = {
     title: string;
     columnId?: string;
     body?: string | null;
-    tags?: string[] | null;
+    tagIDs: string[];
     priority?: number;
     color?: string | null;
   }) => void;
@@ -100,20 +136,196 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return { board: nextBoard };
     });
   },
+  addTag: (name) => {
+    const { board } = get();
+    const result: TagOperationResult = validateTagName(name, board);
+    if (!result.success) return result;
+    set((state) => {
+      const normalizedName = name.toLowerCase().trim();
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const tag: Tag = {
+        id,
+        name: normalizedName,
+        icon: null,
+        color: null,
+        createdAt: now,
+        updatedAt: null,
+        archivedAt: null,
+      };
+      const board = state.board;
+      const nextBoard: Board = {
+        ...board,
+        tags: {
+          ...board.tags,
+          [id]: tag,
+        },
+        tagOrder: [...board.tagOrder, tag.id],
+      };
 
+      return { board: nextBoard };
+    });
+    return result;
+  },
+  shallowDeleteTag: (tagId) => {
+    let result: TagOperationResult = { success: true };
+    set((state) => {
+      const now = new Date().toISOString();
+      const board = state.board;
+      const tag = board.tags[tagId];
+
+      if (!tag) {
+        result = {
+          success: false,
+          errorType: "not-found",
+          error: "Cannot found tag to archive",
+        };
+        return state;
+      }
+      if (tag.archivedAt) {
+        result = {
+          success: false,
+          errorType: "already-archived",
+          error: "This tag is already archived",
+        };
+        return state;
+      }
+
+      const tagOrder = board.tagOrder;
+      const newTagOrder = tagOrder.filter(
+        (tagIdInOrder) => tagIdInOrder !== tagId,
+      );
+
+      const nextBoard: Board = {
+        ...board,
+        tagOrder: newTagOrder,
+        tags: {
+          ...board.tags,
+          [tagId]: {
+            ...tag,
+            archivedAt: now,
+            updatedAt: now,
+          },
+        },
+      };
+      return { board: nextBoard };
+    });
+    return result;
+  },
+  attachTag: ({ tagId, issueId }) => {
+    let result: TagOperationResult = { success: true };
+    set((state) => {
+      const now = new Date().toISOString();
+      const board = state.board;
+      const issue = board.issues[issueId];
+      if (!issue) {
+        result = {
+          success: false,
+          errorType: "not-found",
+          error: "Could not find the issue",
+        };
+        return state;
+      }
+      const tag = board.tags[tagId];
+      if (!tag || tag.archivedAt) {
+        result = {
+          success: false,
+          errorType: "not-found",
+          error: "Could not find the tag",
+        };
+        return state;
+      }
+      if (issue.tagIDs.includes(tagId)) {
+        result = {
+          success: false,
+          errorType: "exist",
+          error: "Tag is already attached to this issue",
+        };
+        return state;
+      }
+      const newIssueTagList = [...issue.tagIDs, tagId];
+      const newBoard: Board = {
+        ...board,
+        issues: {
+          ...board.issues,
+          [issueId]: {
+            ...issue,
+            tagIDs: newIssueTagList,
+            updatedAt: now,
+          },
+        },
+      };
+
+      return { board: newBoard };
+    });
+
+    return result;
+  },
+  detachTag: ({ tagId, issueId }) => {
+    let result: TagOperationResult = { success: true };
+    set((state) => {
+      const now = new Date().toISOString();
+      const board = state.board;
+      const issue = board.issues[issueId];
+      if (!issue) {
+        result = {
+          success: false,
+          errorType: "not-found",
+          error: "Could not find the issue",
+        };
+        return state;
+      }
+      const tag = board.tags[tagId];
+      if (!tag) {
+        result = {
+          success: false,
+          errorType: "not-found",
+          error: "Could not find the tag",
+        };
+        return state;
+      }
+      if (!issue.tagIDs.includes(tagId)) {
+        result = {
+          success: false,
+          errorType: "not-found",
+          error: "Tag isn't attached to this issue",
+        };
+        return state;
+      }
+      const issueTagList = [...issue.tagIDs];
+      const newIssueTagList = issueTagList.filter(
+        (attachedTagId) => attachedTagId !== tagId,
+      );
+      const newBoard: Board = {
+        ...board,
+        issues: {
+          ...board.issues,
+          [issueId]: {
+            ...issue,
+            tagIDs: newIssueTagList,
+            updatedAt: now,
+          },
+        },
+      };
+
+      return { board: newBoard };
+    });
+
+    return result;
+  },
   addIssue: ({
     title,
     columnId,
     body = null,
-    tags = null,
     priority = 1,
     color = null,
+    tagIDs = [],
   }) => {
-    // this ensures that board have at least 1 column , and created issue is visible to the user.
-    const { board, addColumn } = get();
-    if (board.columnOrder.length == 0) {
-      addColumn({ name: "Backlog" });
-    }
+    //redundand
+    // const { board, addColumn } = get();
+    // if (board.columnOrder.length == 0) {
+    //   addColumn({ name: "Backlog" });
+    // }
     const { board: updatedBoard } = get();
     const targetColumnId = columnId ?? updatedBoard.columnOrder[0];
     const now = new Date().toISOString();
@@ -126,9 +338,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         columnId: targetColumnId,
         body,
         blocks: null,
-        tags,
         priority,
         color,
+        tagIDs: tagIDs,
         createdAt: now,
         updatedAt: null,
         archivedAt: null,
@@ -217,52 +429,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       };
     });
   },
-  // reorderIssueInColumn: ({ columnId, oldIndex, newIndex }) =>
-  //   set((state) => {
-  //     const oldBoard = state.board;
-  //     const order = state.board.issueOrderByColumn[columnId];
-  //     const newOrder = [...order];
-  //     const [moved] = newOrder.splice(oldIndex, 1);
-  //     newOrder.splice(newIndex, 0, moved);
-
-  //     return {
-  //       board: {
-  //         ...oldBoard,
-  //         issueOrderByColumn: {
-  //           ...state.board.issueOrderByColumn,
-  //           [columnId]: newOrder,
-  //         },
-  //       },
-  //     };
-  //   }),
-  // moveIssueBetweenColumns: ({ issueId, fromColumnId, toColumnId }) =>
-  //   set((state) => {
-  //     const oldBoard = state.board;
-  //     const issue = oldBoard.issues[issueId];
-
-  //     const nextSourceOrder = oldBoard.issueOrderByColumn[fromColumnId].filter(
-  //       (id) => id !== issueId,
-  //     );
-
-  //     const nextTargetOrder = [
-  //       ...oldBoard.issueOrderByColumn[toColumnId],
-  //       issueId,
-  //     ];
-  //     return {
-  //       board: {
-  //         ...oldBoard,
-  //         issues: {
-  //           ...oldBoard.issues,
-  //           [issueId]: { ...issue, columnId: toColumnId },
-  //         },
-  //         issueOrderByColumn: {
-  //           ...oldBoard.issueOrderByColumn,
-  //           [fromColumnId]: nextSourceOrder,
-  //           [toColumnId]: nextTargetOrder,
-  //         },
-  //       },
-  //     };
-  //   }),
   moveIssue: ({ issueId, fromColumnId, toColumnId, toIndex }) => {
     set((state) => {
       const board = state.board;
@@ -292,7 +458,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         };
       }
 
-      // CROSS COLUMN MOVE
       const nextSourceOrder = sourceOrder.filter((id) => id !== issueId);
 
       const nextDestinationOrder = [...destinationOrder];

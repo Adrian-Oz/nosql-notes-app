@@ -17,6 +17,8 @@ export function createEmptyBoard(name: string): Board {
         archivedAt: null,
       },
     },
+    tags: {},
+    tagOrder: [],
     columnOrder: [columnId],
     issueOrderByColumn: {
       [columnId]: [],

@@ -1,5 +1,6 @@
 import type { Column } from "./column";
 import type { Issue } from "./issue";
+import type { Tag } from "./tag";
 
 export type Board = {
   id: string;
@@ -7,7 +8,9 @@ export type Board = {
 
   columns: Record<string, Column>;
   issues: Record<string, Issue>;
+  tags: Record<string, Tag>;
 
+  tagOrder: string[];
   columnOrder: string[];
   issueOrderByColumn: Record<string, string[]>;
 };
