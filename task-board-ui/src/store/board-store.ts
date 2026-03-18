@@ -27,7 +27,7 @@ const validateTagName = (name: string, board: Board, tagID?: string) => {
     result = {
       success: false,
       errorType: "exist",
-      error: "Name already exist ",
+      error: "Tag already exist ",
     };
     return result;
   }
@@ -41,15 +41,26 @@ type BoardState = {
     issueId?: string;
     targetColumnId?: string;
   };
+  tagDialog: {
+    mode: "create" | "edit" | null;
+    tagId?: string;
+  };
+
   createBoard: (name: string) => void;
   // column logic
   addColumn: (input: { name: string; color?: string | null }) => void;
   moveColumn: (input: { oldIndex: number; newIndex: number }) => void;
   // Tags Logic
-  addTag: (name: string) => TagOperationResult;
+  addTag: (input: {
+    name: string;
+    icon?: string;
+    color?: string;
+  }) => TagOperationResult;
   shallowDeleteTag: (tagId: string) => TagOperationResult;
   attachTag: (input: { tagId: string; issueId: string }) => TagOperationResult;
   detachTag: (input: { tagId: string; issueId: string }) => TagOperationResult;
+  openCreateTag: () => void;
+  closeTagDialog: () => void;
   // issue logic
   openCreateIssue: (columnId: string) => void;
   openEditIssue: (issueId: string) => void;
@@ -81,6 +92,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   issueDialog: {
     mode: null,
   },
+  tagDialog: {
+    mode: null,
+  },
   createBoard: (name: string) => {
     set({
       board: createEmptyBoard(name),
@@ -102,6 +116,21 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         targetColumnId: undefined,
       },
     }),
+  openCreateTag: () => {
+    set({
+      tagDialog: {
+        mode: "create",
+      },
+    });
+  },
+  closeTagDialog: () => {
+    set({
+      tagDialog: {
+        mode: null,
+      },
+    });
+  },
+
   closeIssueDialog: () =>
     set({
       issueDialog: {
@@ -136,7 +165,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return { board: nextBoard };
     });
   },
-  addTag: (name) => {
+  addTag: ({ name, icon = null, color = null }) => {
     const { board } = get();
     const result: TagOperationResult = validateTagName(name, board);
     if (!result.success) return result;
@@ -147,8 +176,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       const tag: Tag = {
         id,
         name: normalizedName,
-        icon: null,
-        color: null,
+        icon: icon,
+        color: color,
         createdAt: now,
         updatedAt: null,
         archivedAt: null,
