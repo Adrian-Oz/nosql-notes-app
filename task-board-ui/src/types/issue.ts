@@ -4,9 +4,9 @@ export type Issue = {
   body: string | null;
   blocks: Record<string, unknown>[] | null;
   columnId: string | null;
-  tags: string[] | null;
   priority: number;
   color: string | null;
+  tagIDs: string[];
 
   createdAt: string;
   updatedAt: string | null;

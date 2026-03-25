@@ -9,3 +9,8 @@ export type Tag = {
   updatedAt: string | null;
   archivedAt: string | null;
 };
+export type TagOperationResult = {
+  success: boolean;
+  errorType?: "empty" | "exist" | "not-found" | "already-archived";
+  error?: string;
+};

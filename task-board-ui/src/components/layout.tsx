@@ -3,15 +3,19 @@ import Board from "../features/board/board";
 import CustomSidebarToggle from "../features/nav/custom-sidebar-toggler";
 
 import { Toaster } from "sonner";
-import AddIssueForm from "@/features/board/issue-dialog";
+import IssueDialog from "@/features/board/issue-dialog";
+import TagDialog from "@/features/tags/tag-dialog";
+// import TagList from "@/features/tags/tag-list";
 
 export default function Layout() {
   return (
     <div className="h-screen flex flex-col gap-4 p-4">
+      <Toaster />
+      <IssueDialog />
+      <TagDialog />
       <div className="flex items-center h-12  rounded-xl relative">
         <CustomSidebarToggle />
-        <Toaster />
-        <AddIssueForm />
+
         {/* header */}
       </div>
       <div className="flex items-center h-32 rounded-xl gap-4">
@@ -19,11 +23,9 @@ export default function Layout() {
           <BoardDebug />
         </div>
         <div className="flex flex-1 bg-(--surface-1) border border-white/5 h-full rounded-xl items-center justify-center">
-          {/* <AddIssueForm /> */}
+          {/* <TagList /> used for debug */}
         </div>
-        <div className="flex flex-1 bg-(--surface-1) border border-white/5 h-full rounded-xl items-center justify-center">
-          Options
-        </div>
+        <div className="flex flex-1 bg-(--surface-1) border border-white/5 h-full rounded-xl items-center justify-center"></div>
       </div>
       <div className="flex  min-h-0  flex-1 bg-(--surface-1) border border-white/5 rounded-xl">
         <Board />
