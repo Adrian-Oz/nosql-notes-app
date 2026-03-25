@@ -41,7 +41,7 @@ export default function BoardColumn({
   return (
     <div
       className={clsx(
-        "h-full min-w-80 max-w-80 rounded-md p-2 border border-red-900 flex flex-col gap-2 bg-(--surface-2)",
+        "h-full min-w-80 max-w-80 rounded-md p-2 border flex flex-col gap-2 bg-(--surface-2)",
         isDragging && "opacity-50",
       )}
       {...attributes}
