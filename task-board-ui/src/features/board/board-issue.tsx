@@ -44,7 +44,8 @@ export default function BoardIssue({
     <div
       className={cn(
         "bg-(--surface-3) h-36 w-full flex flex-col gap-1 rounded-md border p-2",
-        isDragging && "invisible",
+        "bg-yellow-500/20",
+        isDragging && "opacity-0 pointer-events-none transition-none",
       )}
       {...attributes}
       ref={setNodeRef}

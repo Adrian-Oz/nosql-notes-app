@@ -3,7 +3,7 @@ import { useBoardStore } from "@/store/board-store";
 
 export function BoardDebug() {
   const addColumn = useBoardStore((s) => s.addColumn);
-  // const addIssue = useBoardStore((s) => s.addIssue);
+  const addIssue = useBoardStore((s) => s.addIssue);
   const openTagDialog = useBoardStore((s) => s.openCreateTag);
   return (
     <div className="flex gap-2">
@@ -13,6 +13,13 @@ export function BoardDebug() {
         }}
       >
         Add column
+      </Button>
+      <Button
+        onClick={() => {
+          addIssue({ title: "Name Me", tagIDs: [] });
+        }}
+      >
+        Add issue
       </Button>
       <Button
         onClick={() => {

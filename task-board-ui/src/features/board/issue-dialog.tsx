@@ -95,7 +95,7 @@ export default function IssueDialog() {
           columnId: targetColumnId,
           tagIDs: selectedTags,
         });
-
+        setSelectedTags([]);
         toast.success("Issue created");
       }
 

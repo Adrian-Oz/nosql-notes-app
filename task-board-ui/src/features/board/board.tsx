@@ -10,8 +10,10 @@ import {
   type DragOverEvent,
   type DragStartEvent,
   DragOverlay,
-  closestCenter,
+  closestCorners,
 } from "@dnd-kit/core";
+
+import { pointerWithin, rectIntersection } from "@dnd-kit/core";
 
 import BoardColumn from "./board-column";
 import BoardIssue from "./board-issue";
@@ -20,7 +22,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useState } from "react";
+import { act, useState } from "react";
 
 export default function Board() {
   const board = useBoardStore((s) => s.board);
@@ -47,8 +49,10 @@ export default function Board() {
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over) return;
 
+    if (!over) return;
+    if (over.id === active.id) return;
+    // console.log(over.data.current);
     const { board, moveIssue, moveColumn } = useBoardStore.getState();
     // handle issues sorting
     //When in the same container :
@@ -122,10 +126,15 @@ export default function Board() {
     if (over.data.current?.type === "column") {
       const targetColumnId = over.id as string;
 
-      if (sourceColumnId === targetColumnId) return;
+      if (sourceColumnId === targetColumnId) {
+        return;
+      }
 
       const targetOrder = board.issueOrderByColumn[targetColumnId];
       const toIndex = targetOrder.length;
+      // console.log(targetOrder);
+      // console.log("in OVER COLUMN");
+      // console.log(toIndex);
 
       moveIssue({
         issueId: activeIssueId,
@@ -142,7 +151,15 @@ export default function Board() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={(args) => {
+        const pointerCollisions = pointerWithin(args);
+
+        if (pointerCollisions.length > 0) {
+          return pointerCollisions;
+        }
+
+        return rectIntersection(args);
+      }}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}

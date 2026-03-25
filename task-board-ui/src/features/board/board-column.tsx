@@ -9,6 +9,7 @@ import {
 import BoardIssue from "./board-issue";
 import clsx from "clsx";
 import { useBoardStore } from "@/store/board-store";
+import { useDroppable } from "@dnd-kit/core";
 
 export default function BoardColumn({
   column,
@@ -32,10 +33,15 @@ export default function BoardColumn({
       type: "column",
     },
   });
+
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: column.id,
+    data: { type: "column" },
+  });
   return (
     <div
       className={clsx(
-        "h-full min-w-80 max-w-80 rounded-md p-2 border flex flex-col gap-2 bg-(--surface-2)",
+        "h-full min-w-80 max-w-80 rounded-md p-2 border border-red-900 flex flex-col gap-2 bg-(--surface-2)",
         isDragging && "opacity-50",
       )}
       {...attributes}
@@ -54,8 +60,14 @@ export default function BoardColumn({
           <Ellipsis />
         </Button>
       </div>
+
       <SortableContext items={issueIds} strategy={verticalListSortingStrategy}>
-        <div className="min-h-80 flex-1 flex gap-2 p-2 flex-col overflow-y-auto overflow-x-hidden">
+        <div
+          ref={setDroppableRef}
+          className={clsx(
+            "min-h-80 flex-1 flex gap-2 p-2 flex-col overflow-y-auto border-2",
+          )}
+        >
           {issueIds.map((issueId) => {
             const issue = issues[issueId];
             if (!issue) return null;
