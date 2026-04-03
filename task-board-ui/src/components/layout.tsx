@@ -5,6 +5,9 @@ import CustomSidebarToggle from "../features/nav/custom-sidebar-toggler";
 import { Toaster } from "sonner";
 import IssueDialog from "@/features/board/issue-dialog";
 import TagDialog from "@/features/tags/tag-dialog";
+import AuthContainer from "@/features/auth/auth-container";
+import AuthButtons from "@/features/auth/auth-buttons";
+
 // import TagList from "@/features/tags/tag-list";
 
 export default function Layout() {
@@ -13,9 +16,12 @@ export default function Layout() {
       <Toaster />
       <IssueDialog />
       <TagDialog />
-      <div className="flex items-center h-12  rounded-xl relative">
+      <AuthContainer />
+      <div className="flex items-center h-12 justify-between  rounded-xl relative   ">
         <CustomSidebarToggle />
-
+        <div className="ml-auto mr-2">
+          <AuthButtons />
+        </div>
         {/* header */}
       </div>
       <div className="flex items-center h-32 rounded-xl gap-4">
