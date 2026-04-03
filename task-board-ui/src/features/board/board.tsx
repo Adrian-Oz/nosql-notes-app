@@ -10,7 +10,6 @@ import {
   type DragOverEvent,
   type DragStartEvent,
   DragOverlay,
-  closestCorners,
 } from "@dnd-kit/core";
 
 import { pointerWithin, rectIntersection } from "@dnd-kit/core";
@@ -22,7 +21,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { act, useState } from "react";
+import { useState } from "react";
 
 export default function Board() {
   const board = useBoardStore((s) => s.board);
