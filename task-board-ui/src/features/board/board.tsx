@@ -6,7 +6,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
   DragOverlay,
@@ -150,7 +149,7 @@ export default function Board() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = () => {
     setActiveDrag(null);
   };
   return (

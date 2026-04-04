@@ -1,9 +1,12 @@
 import { useBoardStore } from "@/store/board-store";
 import Tag from "./tag";
 export default function TagList() {
-  const tags = useBoardStore((s) => s.board.tags);
-  const tagOrder = useBoardStore((s) => s.board.tagOrder);
-
+  const boards = useBoardStore((s) => s.boards);
+  const activeBoardId = useBoardStore((s) => s.activeBoardId);
+  if (!activeBoardId) return;
+  const board = boards[activeBoardId];
+  const tagOrder = board.tagOrder;
+  const tags = board.tags;
   return (
     <div className="flex flex-col gap-2">
       <div>Chose from those tags : </div>

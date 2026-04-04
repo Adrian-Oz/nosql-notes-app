@@ -13,7 +13,7 @@
     "@/*": ["./src/*"]
   },
 
-  "ignoreDeprecations": "6.0",
+  
 
 
     /* Bundler mode */

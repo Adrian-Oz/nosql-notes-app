@@ -3,7 +3,6 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -36,7 +35,10 @@ const addTagSchema = z.object({
 // FUNCTION
 export default function TagDialog() {
   const { mode } = useBoardStore((s) => s.tagDialog);
-  const board = useBoardStore((s) => s.board);
+  const boards = useBoardStore((s) => s.boards);
+  const activeBoardId = useBoardStore((s) => s.activeBoardId);
+  if (!activeBoardId) return;
+  const board = boards[activeBoardId];
 
   //store actions
   //   const editIssue = useBoardStore((s) => s.editIssue);
