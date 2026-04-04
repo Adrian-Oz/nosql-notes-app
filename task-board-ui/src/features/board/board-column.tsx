@@ -19,7 +19,7 @@ import clsx from "clsx";
 import { useBoardStore } from "@/store/board-store";
 import { useDroppable } from "@dnd-kit/core";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function BoardColumn({
   column,
@@ -41,6 +41,15 @@ export default function BoardColumn({
   const renameColumn = useBoardStore((s) => s.renameColumn);
   const [isEditing, setIsEditing] = useState(false);
   const [columnName, setColumnName] = useState(column.name);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (isEditing) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 10);
+    }
+  }, [isEditing]);
   function handleSave() {
     const trimmed = columnName.trim();
 
@@ -94,6 +103,7 @@ export default function BoardColumn({
           {isEditing ? (
             <input
               autoFocus
+              ref={inputRef}
               value={columnName}
               onChange={(e) => setColumnName(e.target.value)}
               onBlur={handleSave}
@@ -116,7 +126,10 @@ export default function BoardColumn({
               <Ellipsis />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-(--surface-3)">
+          <DropdownMenuContent
+            className="bg-(--surface-3)"
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
             <DropdownMenuGroup>
               <DropdownMenuLabel>This Issue</DropdownMenuLabel>
               <DropdownMenuItem
