@@ -37,7 +37,9 @@ export default function Layout() {
         <Board />
       </div>
       <div className="flex items-center justify-center h-24 bg-(--surface-1) border border-white/5 rounded-xl">
-        footer
+        There is only local persistence while signed out, all data from demo may
+        be lost on signing in, and replaced with stored boards , merge maybe in
+        future
       </div>
     </div>
   );

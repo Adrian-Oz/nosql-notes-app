@@ -26,7 +26,11 @@ export default function BoardIssue({
 }) {
   const openEditIssue = useBoardStore((s) => s.openEditIssue);
   const deleteIssue = useBoardStore((s) => s.deleteIssue);
-  const boardTags = useBoardStore((s) => s.board.tags);
+  const boards = useBoardStore((s) => s.boards);
+  const activeBoardId = useBoardStore((s) => s.activeBoardId);
+  if (!activeBoardId) return;
+  const board = boards[activeBoardId];
+  const boardTags = board.tags;
   const {
     attributes,
     setNodeRef,

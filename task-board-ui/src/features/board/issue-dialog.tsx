@@ -36,7 +36,11 @@ const addIssueSchema = z.object({
 // FUNCTION
 export default function IssueDialog() {
   const { mode, issueId, targetColumnId } = useBoardStore((s) => s.issueDialog);
-  const board = useBoardStore((s) => s.board);
+
+  const boards = useBoardStore((s) => s.boards);
+  const activeBoardId = useBoardStore((s) => s.activeBoardId);
+  if (!activeBoardId) return;
+  const board = boards[activeBoardId];
   const tagList = board.tagOrder;
   const tags = board.tags;
 

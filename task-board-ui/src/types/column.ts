@@ -7,3 +7,9 @@ export type Column = {
   updatedAt: string | null;
   archivedAt: string | null;
 };
+
+export type ColumnOperationResult = {
+  success: boolean;
+  error?: string;
+  errorType?: "not-found" | "not-empty";
+};

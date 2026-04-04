@@ -1,6 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Ellipsis, Ghost, Squircle } from "lucide-react";
+import { Ellipsis, Squircle } from "lucide-react";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   SortableContext,
   useSortable,
@@ -10,6 +18,8 @@ import BoardIssue from "./board-issue";
 import clsx from "clsx";
 import { useBoardStore } from "@/store/board-store";
 import { useDroppable } from "@dnd-kit/core";
+import { toast } from "sonner";
+import { useEffect, useRef, useState } from "react";
 
 export default function BoardColumn({
   column,
@@ -18,8 +28,41 @@ export default function BoardColumn({
   column: { id: string; name: string };
   issueIds: string[];
 }) {
-  const issues = useBoardStore((s) => s.board.issues);
+  //BOARD
+  const boards = useBoardStore((s) => s.boards);
+  const activeBoardId = useBoardStore((s) => s.activeBoardId);
+  if (!activeBoardId) return;
+  const board = boards[activeBoardId];
+  //Issue related
+  const issues = board.issues;
   const openCreateIssue = useBoardStore((s) => s.openCreateIssue);
+  //COLUMN related
+  const deleteColumn = useBoardStore((s) => s.deleteColumn);
+  const renameColumn = useBoardStore((s) => s.renameColumn);
+  const [isEditing, setIsEditing] = useState(false);
+  const [columnName, setColumnName] = useState(column.name);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (isEditing) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 10);
+    }
+  }, [isEditing]);
+  function handleSave() {
+    const trimmed = columnName.trim();
+
+    if (trimmed === "") {
+      setColumnName(column.name);
+      setIsEditing(false);
+      return;
+    }
+
+    renameColumn({ columnId: column.id, name: trimmed });
+    setIsEditing(false);
+  }
+  //DND related
   const {
     attributes,
     setNodeRef,
@@ -34,7 +77,7 @@ export default function BoardColumn({
     },
   });
 
-  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+  const { setNodeRef: setDroppableRef } = useDroppable({
     id: column.id,
     data: { type: "column" },
   });
@@ -52,13 +95,63 @@ export default function BoardColumn({
       }}
     >
       <div className="w-full flex items-center p-2 justify-between border-b">
-        <div className="flex gap-1 items-center cursor-grab" {...listeners}>
+        <div
+          className="flex gap-1 items-center cursor-grab"
+          {...(!isEditing ? listeners : {})}
+        >
           <Squircle />
-          <p className="text-xl">{column.name}</p>
+          {isEditing ? (
+            <input
+              autoFocus
+              ref={inputRef}
+              value={columnName}
+              onChange={(e) => setColumnName(e.target.value)}
+              onBlur={handleSave}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSave();
+                if (e.key === "Escape") {
+                  setIsEditing(false);
+                  setColumnName(column.name);
+                }
+              }}
+              className="text-xl bg-transparent border-b outline-none"
+            />
+          ) : (
+            <p className="text-xl">{column.name}</p>
+          )}
         </div>
-        <Button variant="ghost">
-          <Ellipsis />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="hover">
+              <Ellipsis />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="bg-(--surface-3)"
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>This Issue</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => {
+                  setIsEditing(true);
+                }}
+              >
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  const result = deleteColumn(column.id);
+                  if (!result.success) {
+                    toast.error(result.error);
+                  } else toast.success("Column Deleted ");
+                }}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <SortableContext items={issueIds} strategy={verticalListSortingStrategy}>
