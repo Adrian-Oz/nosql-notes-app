@@ -8,26 +8,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./lib/firebase";
 import LayoutSkeleton from "./components/layout-skeleton";
 import { useBoardStore } from "./store/board-store";
-import type { Board } from "./types/board";
-import { getStrategy, guestStrategy } from "./lib/storage-strategies";
+import { getStrategy } from "./lib/storage-strategies";
 // import Board from "./features/board/board";
-
-function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-
-  return (...args: Parameters<T>) => {
-    if (timer) {
-      clearTimeout(timer);
-    }
-
-    timer = setTimeout(() => {
-      fn(...args);
-    }, delay);
-  };
-}
-const debouncedSave = debounce((boards: Record<string, Board>) => {
-  localStorage.setItem("boards", JSON.stringify(boards));
-}, 400);
 
 function App() {
   const setUser = useAuthStore((s) => s.setUser);
@@ -35,6 +17,9 @@ function App() {
   const isAuthLoading = useAuthStore((s) => s.isAuthLoading);
   const createBoard = useBoardStore((s) => s.createBoard);
   const hydrateBoards = useBoardStore((s) => s.hydrateBoards);
+  const getBoards = () => {
+    return useBoardStore.getState().boards;
+  };
   // AUTH listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -50,12 +35,26 @@ function App() {
   let modeRef = useRef<string | null>(null);
   useEffect(() => {
     if (isAuthLoading) return;
+    let isCurrent = true;
     const mode = user ? "user" : "guest";
     if (mode === modeRef.current) return;
-    const strategy = getStrategy(mode);
-    strategy.load({ hydrateBoards, createBoard });
-    useBoardStore.setState({ isHydrated: true, hydriationMode: mode });
-    modeRef.current = mode;
+    async function strategyRun() {
+      const strategy = getStrategy(mode);
+      try {
+        const userId = useAuthStore.getState().user?.uid;
+        await strategy.load({ hydrateBoards, createBoard, getBoards, userId });
+        if (!isCurrent) return;
+      } catch (error) {
+        console.log("load failed , creating base board");
+        if (!isCurrent) return;
+      }
+      useBoardStore.setState({ isHydrated: true, hydriationMode: mode });
+      modeRef.current = mode;
+    }
+    strategyRun();
+    return () => {
+      isCurrent = false;
+    };
   }, [isAuthLoading, hydrateBoards, createBoard, user]);
 
   // Persistence
@@ -65,7 +64,8 @@ function App() {
       if (!state.isHydrated) return;
       const mode = useAuthStore.getState().user ? "user" : "guest";
       const strategy = getStrategy(mode);
-      strategy.save({ hydrateBoards, createBoard }, state.boards);
+      const userId = useAuthStore.getState().user?.uid;
+      strategy.save({ hydrateBoards, createBoard, getBoards, userId });
     });
 
     return unsubscribe;

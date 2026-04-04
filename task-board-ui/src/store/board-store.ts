@@ -1,7 +1,7 @@
 import type { Board } from "@/types/board";
 import { createEmptyBoard } from "./create-empty-board";
 import { create } from "zustand";
-import type { Column } from "@/types/column";
+import type { Column, ColumnOperationResult } from "@/types/column";
 
 import type { Issue } from "@/types/issue";
 import type { TagOperationResult, Tag } from "@/types/tag";
@@ -54,6 +54,8 @@ type BoardState = {
   createBoard: (name: string) => void;
   // column logic
   addColumn: (input: { name: string; color?: string | null }) => void;
+  renameColumn: (input: { columnId: string; name: string }) => void;
+  deleteColumn: (columnId: string) => ColumnOperationResult;
   moveColumn: (input: { oldIndex: number; newIndex: number }) => void;
   // Tags Logic
   addTag: (input: {
@@ -169,42 +171,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         mode: null,
       },
     }),
-  // addColumn: ({ name, color = null }) => {
-  //   set((state) => {
-  //     const id = crypto.randomUUID();
-  //     const now = new Date().toISOString();
-  //     const column: Column = {
-  //       id,
-  //       name,
-  //       color,
-  //       createdAt: now,
-  //       updatedAt: null,
-  //       archivedAt: null,
-  //     };
-  //     const board = get().getActiveBoard();
-  //     if (!board) {
-  //       return state;
-  //     }
-  //     const nextBoard: Board = {
-  //       ...board,
-  //       columns: {
-  //         ...board.columns,
-  //         [id]: column,
-  //       },
-  //       columnOrder: [...board.columnOrder, id],
-  //       issueOrderByColumn: {
-  //         ...board.issueOrderByColumn,
-  //         [id]: [],
-  //       },
-  //     };
-  //     return {
-  //       boards: {
-  //         ...state.boards,
-  //         [board.id]: nextBoard,
-  //       },
-  //     };
-  //   });
-  // },
   addColumn: ({ name, color = null }) => {
     set((state) => {
       const { activeBoardId, boards } = state;
@@ -247,6 +213,99 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       };
     });
   },
+  renameColumn: ({ columnId, name }) => {
+    set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
+      if (!board.columns[columnId]) return state;
+      const column = board.columns[columnId];
+      const now = new Date().toISOString();
+      const trimmed = name.trim();
+      if (trimmed === "") return state;
+      if (trimmed === column.name) return state;
+      const nextBoard: Board = {
+        ...board,
+        columns: {
+          ...board.columns,
+          [columnId]: {
+            ...column,
+            name: trimmed,
+            updatedAt: now,
+          },
+        },
+      };
+
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
+    });
+  },
+
+  deleteColumn: (columnId) => {
+    let result: ColumnOperationResult = { success: true };
+    set((state) => {
+      const { activeBoardId, boards } = state;
+      if (!activeBoardId) return state;
+      const board = boards[activeBoardId];
+
+      if (!board) {
+        result = {
+          success: false,
+          error: "Board doesnt exist",
+          errorType: "not-found",
+        };
+        return state;
+      }
+      if (!board.columns[columnId]) {
+        result = {
+          success: false,
+          error: "No collumn with this Id",
+          errorType: "not-found",
+        };
+        return state;
+      }
+      const issuesInColumn = board.issueOrderByColumn[columnId] ?? [];
+      if (issuesInColumn.length > 0) {
+        result = {
+          success: false,
+          error: "Column has issues, please move or delete them first",
+          errorType: "not-empty",
+        };
+        return state;
+      }
+      // remove from columns
+      const { [columnId]: _, ...remainingColumns } = board.columns;
+      //remove from columnOrder in board
+      const currentColumnOrder = [...board.columnOrder];
+      const newColumnOrder = currentColumnOrder.filter((id) => id !== columnId);
+      //remove from issueOrderByColumn
+      const { [columnId]: __, ...remainingIssueOrderByColumn } =
+        board.issueOrderByColumn;
+
+      const nextBoard: Board = {
+        ...board,
+        columnOrder: newColumnOrder,
+        columns: remainingColumns,
+        issueOrderByColumn: remainingIssueOrderByColumn,
+      };
+
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
+    });
+    return result;
+  },
+
   addTag: ({ name, icon = null, color = null }) => {
     const { boards, activeBoardId } = get();
     if (!activeBoardId) {

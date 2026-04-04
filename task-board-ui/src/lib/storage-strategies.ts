@@ -1,8 +1,17 @@
 import type { Board } from "@/types/board";
-
+import { db } from "./firebase";
+import {
+  doc,
+  DocumentReference,
+  getDoc,
+  setDoc,
+  type DocumentData,
+} from "firebase/firestore";
 export type StrategyDependencies = {
   hydrateBoards: (boards: Record<string, Board>) => void;
   createBoard: (name: string) => void;
+  getBoards: () => Record<string, Board>;
+  userId: string | undefined;
 };
 type Mode = "user" | "guest";
 
@@ -23,11 +32,6 @@ const debouncedSaveGuest = debounce((boards: Record<string, Board>) => {
   localStorage.setItem("boards", JSON.stringify(boards));
 }, 400);
 
-const debouncedSaveUser = debounce((boards: Record<string, Board>) => {
-  // localStorage.setItem("boards", JSON.stringify(boards));  this has to change into user save
-  console.log("user save placeholder");
-}, 800); // more time because of server delay
-
 export const guestStrategy = {
   load(dependencies: StrategyDependencies) {
     const raw = localStorage.getItem("boards");
@@ -44,20 +48,59 @@ export const guestStrategy = {
       dependencies.createBoard("Base");
     }
   },
-  save(dependencies: StrategyDependencies, boards: Record<string, Board>) {
-    debouncedSaveGuest(boards);
+  save(dependencies: StrategyDependencies) {
+    debouncedSaveGuest(dependencies.getBoards());
   },
 };
 
 export const userStrategy = {
-  load(dependencies: StrategyDependencies) {
-    // for now i have no idea what i need here :D
-    console.log("user load placeholder");
+  async load(dependencies: StrategyDependencies) {
+    console.log("INSIDE LOAD USER");
+    try {
+      if (!dependencies.userId) return;
+      console.log("INSIDE LOAD USER after userid check");
+
+      const userDocRef = doc(db, "users", dependencies.userId);
+      const docSnapshot = await getDoc(userDocRef);
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        console.log("data exists");
+        const boards = data.boards;
+        if (boards) {
+          dependencies.hydrateBoards(boards);
+          console.log("board hydrated ?");
+        } else dependencies.createBoard("fallback");
+      } else {
+        console.log("user doc does not exist");
+        dependencies.createBoard("fallback");
+      }
+    } catch (error) {
+      console.error("Couldnt get document : ", error);
+      dependencies.createBoard("fallback");
+    }
   },
-  save(dependencies: StrategyDependencies, boards: Record<string, Board>) {
-    debouncedSaveUser(boards);
+  save(dependencies: StrategyDependencies) {
+    if (!dependencies.userId) return;
+    const userDocRef = doc(db, "users", dependencies.userId);
+    debouncedSaveUser(dependencies.getBoards, userDocRef);
   },
 };
+
+const debouncedSaveUser = debounce(
+  async (
+    getBoards: () => Record<string, Board>,
+    docRef: DocumentReference<DocumentData, DocumentData>,
+  ) => {
+    try {
+      const boards = getBoards();
+      await setDoc(docRef, { boards });
+      console.log("Document successfully written/overwritten!");
+    } catch (error) {
+      console.error("Error writing document: ", error);
+    }
+  },
+  400,
+);
 
 export const strategyMap = {
   user: userStrategy,
