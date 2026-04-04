@@ -24,7 +24,10 @@ import {
 import { useState } from "react";
 
 export default function Board() {
-  const board = useBoardStore((s) => s.board);
+  const boards = useBoardStore((s) => s.boards);
+  const activeBoardId = useBoardStore((s) => s.activeBoardId);
+  if (!activeBoardId) return;
+  const board = boards[activeBoardId];
 
   const [activeDrag, setActiveDrag] = useState<{
     id: string;
@@ -52,7 +55,10 @@ export default function Board() {
     if (!over) return;
     if (over.id === active.id) return;
     // console.log(over.data.current);
-    const { board, moveIssue, moveColumn } = useBoardStore.getState();
+    const { boards, activeBoardId, moveIssue, moveColumn } =
+      useBoardStore.getState();
+    if (!activeBoardId) return;
+    const board = boards[activeBoardId];
     // handle issues sorting
     //When in the same container :
 

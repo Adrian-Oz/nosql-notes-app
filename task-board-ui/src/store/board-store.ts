@@ -35,7 +35,10 @@ const validateTagName = (name: string, board: Board, tagID?: string) => {
 };
 
 type BoardState = {
-  board: Board;
+  boards: Record<string, Board>;
+  activeBoardId: string | null;
+  isHydrated: boolean;
+  hydriationMode: "user" | "guest" | null;
   issueDialog: {
     mode: "create" | "edit" | null;
     issueId?: string;
@@ -46,6 +49,8 @@ type BoardState = {
     tagId?: string;
   };
 
+  hydrateBoards: (boards: Record<string, Board>) => void;
+  getActiveBoard: () => Board | null;
   createBoard: (name: string) => void;
   // column logic
   addColumn: (input: { name: string; color?: string | null }) => void;
@@ -87,17 +92,45 @@ type BoardState = {
   }) => void;
 };
 
+const initialBoard = createEmptyBoard("Base");
+
 export const useBoardStore = create<BoardState>((set, get) => ({
-  board: createEmptyBoard("Untitled"),
+  boards: {
+    [initialBoard.id]: initialBoard,
+  },
+  activeBoardId: initialBoard.id,
+  isHydrated: false,
+  hydriationMode: null,
   issueDialog: {
     mode: null,
   },
   tagDialog: {
     mode: null,
   },
-  createBoard: (name: string) => {
+  getActiveBoard: () => {
+    const { boards, activeBoardId } = get();
+    if (!activeBoardId) return null;
+    return boards[activeBoardId] ?? null;
+  },
+  hydrateBoards: (boards: Record<string, Board>) => {
+    const ids = Object.keys(boards);
     set({
-      board: createEmptyBoard(name),
+      boards: boards,
+      activeBoardId: ids[0] ?? null,
+      isHydrated: true,
+    });
+  },
+  createBoard: (name: string) => {
+    set((state) => {
+      const newBoard = createEmptyBoard(name);
+
+      return {
+        boards: {
+          ...state.boards,
+          [newBoard.id]: newBoard,
+        },
+        activeBoardId: newBoard.id,
+      };
     });
   },
   openCreateIssue: (columnId) =>
@@ -130,17 +163,60 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       },
     });
   },
-
   closeIssueDialog: () =>
     set({
       issueDialog: {
         mode: null,
       },
     }),
+  // addColumn: ({ name, color = null }) => {
+  //   set((state) => {
+  //     const id = crypto.randomUUID();
+  //     const now = new Date().toISOString();
+  //     const column: Column = {
+  //       id,
+  //       name,
+  //       color,
+  //       createdAt: now,
+  //       updatedAt: null,
+  //       archivedAt: null,
+  //     };
+  //     const board = get().getActiveBoard();
+  //     if (!board) {
+  //       return state;
+  //     }
+  //     const nextBoard: Board = {
+  //       ...board,
+  //       columns: {
+  //         ...board.columns,
+  //         [id]: column,
+  //       },
+  //       columnOrder: [...board.columnOrder, id],
+  //       issueOrderByColumn: {
+  //         ...board.issueOrderByColumn,
+  //         [id]: [],
+  //       },
+  //     };
+  //     return {
+  //       boards: {
+  //         ...state.boards,
+  //         [board.id]: nextBoard,
+  //       },
+  //     };
+  //   });
+  // },
   addColumn: ({ name, color = null }) => {
     set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
+
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
+
       const column: Column = {
         id,
         name,
@@ -149,7 +225,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         updatedAt: null,
         archivedAt: null,
       };
-      const board = state.board;
+
       const nextBoard: Board = {
         ...board,
         columns: {
@@ -162,14 +238,33 @@ export const useBoardStore = create<BoardState>((set, get) => ({
           [id]: [],
         },
       };
-      return { board: nextBoard };
+
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
     });
   },
   addTag: ({ name, icon = null, color = null }) => {
-    const { board } = get();
-    const result: TagOperationResult = validateTagName(name, board);
+    const { boards, activeBoardId } = get();
+    if (!activeBoardId) {
+      let result: TagOperationResult = { success: false };
+      return result;
+    }
+    const result: TagOperationResult = validateTagName(
+      name,
+      boards[activeBoardId],
+    );
     if (!result.success) return result;
     set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
       const normalizedName = name.toLowerCase().trim();
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
@@ -182,7 +277,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         updatedAt: null,
         archivedAt: null,
       };
-      const board = state.board;
       const nextBoard: Board = {
         ...board,
         tags: {
@@ -192,15 +286,25 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         tagOrder: [...board.tagOrder, tag.id],
       };
 
-      return { board: nextBoard };
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
     });
     return result;
   },
   shallowDeleteTag: (tagId) => {
     let result: TagOperationResult = { success: true };
     set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
       const now = new Date().toISOString();
-      const board = state.board;
       const tag = board.tags[tagId];
 
       if (!tag) {
@@ -237,15 +341,25 @@ export const useBoardStore = create<BoardState>((set, get) => ({
           },
         },
       };
-      return { board: nextBoard };
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
     });
     return result;
   },
   attachTag: ({ tagId, issueId }) => {
     let result: TagOperationResult = { success: true };
     set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
       const now = new Date().toISOString();
-      const board = state.board;
       const issue = board.issues[issueId];
       if (!issue) {
         result = {
@@ -273,7 +387,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         return state;
       }
       const newIssueTagList = [...issue.tagIDs, tagId];
-      const newBoard: Board = {
+      const nextBoard: Board = {
         ...board,
         issues: {
           ...board.issues,
@@ -285,7 +399,12 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         },
       };
 
-      return { board: newBoard };
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
     });
 
     return result;
@@ -293,8 +412,13 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   detachTag: ({ tagId, issueId }) => {
     let result: TagOperationResult = { success: true };
     set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
       const now = new Date().toISOString();
-      const board = state.board;
       const issue = board.issues[issueId];
       if (!issue) {
         result = {
@@ -325,7 +449,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       const newIssueTagList = issueTagList.filter(
         (attachedTagId) => attachedTagId !== tagId,
       );
-      const newBoard: Board = {
+      const nextBoard: Board = {
         ...board,
         issues: {
           ...board.issues,
@@ -337,7 +461,12 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         },
       };
 
-      return { board: newBoard };
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
     });
 
     return result;
@@ -350,17 +479,20 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     color = null,
     tagIDs = [],
   }) => {
-    //redundand
-    // const { board, addColumn } = get();
-    // if (board.columnOrder.length == 0) {
-    //   addColumn({ name: "Backlog" });
-    // }
-    const { board: updatedBoard } = get();
-    const targetColumnId = columnId ?? updatedBoard.columnOrder[0];
-    const now = new Date().toISOString();
-    const id = crypto.randomUUID();
-
     set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
+
+      const targetColumnId = columnId ?? board.columnOrder[0];
+      if (!targetColumnId) return state;
+
+      const now = new Date().toISOString();
+      const id = crypto.randomUUID();
+
       const issue: Issue = {
         id,
         title,
@@ -369,30 +501,42 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         blocks: null,
         priority,
         color,
-        tagIDs: tagIDs,
+        tagIDs,
         createdAt: now,
         updatedAt: null,
         archivedAt: null,
       };
-      const curBoard = state.board;
-      const currentOrder = state.board.issueOrderByColumn[`${targetColumnId}`];
-      const newOrderByColumn = [...currentOrder];
-      newOrderByColumn.push(issue.id);
+
+      const currentOrder = board.issueOrderByColumn[targetColumnId] ?? [];
+
       const nextBoard: Board = {
-        ...curBoard,
-        issues: { ...curBoard.issues, [id]: issue },
+        ...board,
+        issues: {
+          ...board.issues,
+          [id]: issue,
+        },
         issueOrderByColumn: {
-          ...curBoard.issueOrderByColumn,
-          [targetColumnId]: newOrderByColumn,
+          ...board.issueOrderByColumn,
+          [targetColumnId]: [...currentOrder, id],
         },
       };
 
-      return { board: nextBoard };
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
     });
   },
   deleteIssue: (issueId) =>
     set((state) => {
-      const board = state.board;
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
       const issue = board.issues[issueId];
       if (!issue) return state;
 
@@ -406,61 +550,101 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       const currentOrder = board.issueOrderByColumn[columnId] ?? [];
       const newOrder = currentOrder.filter((id) => id !== issueId);
 
+      const nextBoard: Board = {
+        ...board,
+        issues: remainingIssues,
+        issueOrderByColumn: {
+          ...board.issueOrderByColumn,
+          [columnId]: newOrder,
+        },
+      };
+
       return {
-        board: {
-          ...board,
-          issues: remainingIssues,
-          issueOrderByColumn: {
-            ...board.issueOrderByColumn,
-            [columnId]: newOrder,
-          },
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
         },
       };
     }),
   editIssue: ({ issueId, title, body }) => {
     set((state) => {
-      const board = state.board;
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
+
       const issue = board.issues[issueId];
       if (!issue) return state;
       const now = new Date().toISOString();
-      return {
-        board: {
-          ...board,
-          issues: {
-            ...board.issues,
-            [issueId]: {
-              ...issue,
-              ...(title !== undefined && { title }),
-              ...(body !== undefined && { body }),
-              updatedAt: now,
-            },
+
+      const nextBoard: Board = {
+        ...board,
+        issues: {
+          ...board.issues,
+          [issueId]: {
+            ...issue,
+            ...(title !== undefined && { title }),
+            ...(body !== undefined && { body }),
+            updatedAt: now,
           },
+        },
+      };
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
         },
       };
     });
   },
   moveColumn: ({ oldIndex, newIndex }) => {
     set((state) => {
-      const board = state.board;
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
+
       const order = board.columnOrder;
 
-      if (oldIndex === newIndex) return state;
+      if (
+        oldIndex === newIndex ||
+        oldIndex < 0 ||
+        newIndex < 0 ||
+        oldIndex >= order.length ||
+        newIndex >= order.length
+      ) {
+        return state;
+      }
 
       const newOrder = [...order];
       const [moved] = newOrder.splice(oldIndex, 1);
       newOrder.splice(newIndex, 0, moved);
 
+      const nextBoard: Board = {
+        ...board,
+        columnOrder: newOrder,
+      };
+
       return {
-        board: {
-          ...board,
-          columnOrder: newOrder,
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
         },
       };
     });
   },
   moveIssue: ({ issueId, fromColumnId, toColumnId, toIndex }) => {
     set((state) => {
-      const board = state.board;
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
 
       const sourceOrder = board.issueOrderByColumn[fromColumnId] ?? [];
       const destinationOrder = board.issueOrderByColumn[toColumnId] ?? [];
@@ -476,13 +660,18 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         newOrder.splice(oldIndex, 1);
         newOrder.splice(toIndex, 0, issueId);
 
+        const nextBoard: Board = {
+          ...board,
+          issueOrderByColumn: {
+            ...board.issueOrderByColumn,
+            [fromColumnId]: newOrder,
+          },
+        };
+
         return {
-          board: {
-            ...board,
-            issueOrderByColumn: {
-              ...board.issueOrderByColumn,
-              [fromColumnId]: newOrder,
-            },
+          boards: {
+            ...boards,
+            [activeBoardId]: nextBoard,
           },
         };
       }
@@ -492,21 +681,26 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       const nextDestinationOrder = [...destinationOrder];
       nextDestinationOrder.splice(toIndex, 0, issueId);
 
+      const nextBoard: Board = {
+        ...board,
+        issues: {
+          ...board.issues,
+          [issueId]: {
+            ...board.issues[issueId],
+            columnId: toColumnId,
+          },
+        },
+        issueOrderByColumn: {
+          ...board.issueOrderByColumn,
+          [fromColumnId]: nextSourceOrder,
+          [toColumnId]: nextDestinationOrder,
+        },
+      };
+
       return {
-        board: {
-          ...board,
-          issues: {
-            ...board.issues,
-            [issueId]: {
-              ...board.issues[issueId],
-              columnId: toColumnId,
-            },
-          },
-          issueOrderByColumn: {
-            ...board.issueOrderByColumn,
-            [fromColumnId]: nextSourceOrder,
-            [toColumnId]: nextDestinationOrder,
-          },
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
         },
       };
     });

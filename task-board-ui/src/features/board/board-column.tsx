@@ -18,7 +18,11 @@ export default function BoardColumn({
   column: { id: string; name: string };
   issueIds: string[];
 }) {
-  const issues = useBoardStore((s) => s.board.issues);
+  const boards = useBoardStore((s) => s.boards);
+  const activeBoardId = useBoardStore((s) => s.activeBoardId);
+  if (!activeBoardId) return;
+  const board = boards[activeBoardId];
+  const issues = board.issues;
   const openCreateIssue = useBoardStore((s) => s.openCreateIssue);
   const {
     attributes,
