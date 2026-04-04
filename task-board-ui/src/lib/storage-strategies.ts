@@ -55,10 +55,8 @@ export const guestStrategy = {
 
 export const userStrategy = {
   async load(dependencies: StrategyDependencies) {
-    console.log("INSIDE LOAD USER");
     try {
       if (!dependencies.userId) return;
-      console.log("INSIDE LOAD USER after userid check");
 
       const userDocRef = doc(db, "users", dependencies.userId);
       const docSnapshot = await getDoc(userDocRef);
@@ -68,7 +66,6 @@ export const userStrategy = {
         const boards = data.boards;
         if (boards) {
           dependencies.hydrateBoards(boards);
-          console.log("board hydrated ?");
         } else dependencies.createBoard("fallback");
       } else {
         console.log("user doc does not exist");
