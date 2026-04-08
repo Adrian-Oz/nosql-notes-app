@@ -34,7 +34,12 @@ export default function Board() {
   } | null>(null);
   //DnD Handlers
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 80,
+        tolerance: 20,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),

@@ -51,6 +51,7 @@ export default function BoardIssue({
 
         isDragging && "opacity-0 pointer-events-none transition-none",
       )}
+      {...listeners}
       {...attributes}
       ref={setNodeRef}
       style={{
@@ -59,7 +60,7 @@ export default function BoardIssue({
       }}
     >
       <div className="w-full flex items-center gap-2 text-primary/60">
-        <div className="flex gap-0.5 items-center cursor-grab " {...listeners}>
+        <div className="flex gap-0.5 items-center">
           <CircleDotIcon size={12} />
           <p className="text-sm">{issue.title ?? issue.id}</p>
         </div>

@@ -15,6 +15,7 @@ function App() {
   const setUser = useAuthStore((s) => s.setUser);
   const setAuthLoading = useAuthStore((s) => s.setAuthLoading);
   const isAuthLoading = useAuthStore((s) => s.isAuthLoading);
+  const isHydrated = useBoardStore((s) => s.isHydrated);
   const createBoard = useBoardStore((s) => s.createBoard);
   const hydrateBoards = useBoardStore((s) => s.hydrateBoards);
   const getBoards = () => {
@@ -76,7 +77,7 @@ function App() {
       <div className="absolute inset-0 bg-background -z-10" />
       <AppSidebar />
       <main className="w-full overflow-y-hidden">
-        {!isAuthLoading && <Layout />}
+        {!isAuthLoading && isHydrated && <Layout />}
         {isAuthLoading && <LayoutSkeleton />}
       </main>
     </SidebarProvider>
