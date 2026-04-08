@@ -38,6 +38,7 @@ type BoardState = {
   boards: Record<string, Board>;
   activeBoardId: string | null;
   isHydrated: boolean;
+  isHydrating: boolean;
   hydriationMode: "user" | "guest" | null;
   issueDialog: {
     mode: "create" | "edit" | null;
@@ -48,16 +49,27 @@ type BoardState = {
     mode: "create" | "edit" | null;
     tagId?: string;
   };
-
-  hydrateBoards: (boards: Record<string, Board>) => void;
-  getActiveBoard: () => Board | null;
   createBoard: (name: string) => void;
+  getActiveBoard: () => Board | null;
+  hydrateBoards: (boards: Record<string, Board>) => void;
+  //
+  //  Modal flags
+  //
+  openCreateTag: () => void;
+  closeTagDialog: () => void;
+  openCreateIssue: (columnId: string) => void;
+  openEditIssue: (issueId: string) => void;
+  closeIssueDialog: () => void;
+  //
   // column logic
+  //
   addColumn: (input: { name: string; color?: string | null }) => void;
   renameColumn: (input: { columnId: string; name: string }) => void;
   deleteColumn: (columnId: string) => ColumnOperationResult;
   moveColumn: (input: { oldIndex: number; newIndex: number }) => void;
+  //
   // Tags Logic
+  //
   addTag: (input: {
     name: string;
     icon?: string;
@@ -66,12 +78,11 @@ type BoardState = {
   shallowDeleteTag: (tagId: string) => TagOperationResult;
   attachTag: (input: { tagId: string; issueId: string }) => TagOperationResult;
   detachTag: (input: { tagId: string; issueId: string }) => TagOperationResult;
-  openCreateTag: () => void;
-  closeTagDialog: () => void;
+  // toggleFilterTagsIds: (tagId: string) => void;
+  selectedFilterTagsIds: string[];
+  //
   // issue logic
-  openCreateIssue: (columnId: string) => void;
-  openEditIssue: (issueId: string) => void;
-  closeIssueDialog: () => void;
+  //
   deleteIssue: (issueId: string) => void;
   editIssue: (input: {
     issueId: string;
@@ -94,14 +105,17 @@ type BoardState = {
   }) => void;
 };
 
-const initialBoard = createEmptyBoard("Base");
+// const initialBoard = createEmptyBoard("Base");
 
 export const useBoardStore = create<BoardState>((set, get) => ({
-  boards: {
-    [initialBoard.id]: initialBoard,
-  },
-  activeBoardId: initialBoard.id,
+  boards: {},
+  activeBoardId: null,
+  // boards: {
+  //   [initialBoard.id]: initialBoard,
+  // },
+  // activeBoardId: initialBoard.id,
   isHydrated: false,
+  isHydrating: false,
   hydriationMode: null,
   issueDialog: {
     mode: null,
@@ -123,7 +137,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     });
   },
   createBoard: (name: string) => {
+    console.log("create board call");
     set((state) => {
+      console.log("THIS IS FROM CREATE", state.boards);
       const newBoard = createEmptyBoard(name);
 
       return {
@@ -135,6 +151,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       };
     });
   },
+  //
+  //  Modal flags
+  //
   openCreateIssue: (columnId) =>
     set({
       issueDialog: {
@@ -171,6 +190,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         mode: null,
       },
     }),
+  //
+  //  Column logic
+  //
+
   addColumn: ({ name, color = null }) => {
     set((state) => {
       const { activeBoardId, boards } = state;
@@ -203,6 +226,44 @@ export const useBoardStore = create<BoardState>((set, get) => ({
           ...board.issueOrderByColumn,
           [id]: [],
         },
+      };
+
+      return {
+        boards: {
+          ...boards,
+          [activeBoardId]: nextBoard,
+        },
+      };
+    });
+  },
+  moveColumn: ({ oldIndex, newIndex }) => {
+    set((state) => {
+      const { activeBoardId, boards } = state;
+
+      if (!activeBoardId) return state;
+
+      const board = boards[activeBoardId];
+      if (!board) return state;
+
+      const order = board.columnOrder;
+
+      if (
+        oldIndex === newIndex ||
+        oldIndex < 0 ||
+        newIndex < 0 ||
+        oldIndex >= order.length ||
+        newIndex >= order.length
+      ) {
+        return state;
+      }
+
+      const newOrder = [...order];
+      const [moved] = newOrder.splice(oldIndex, 1);
+      newOrder.splice(newIndex, 0, moved);
+
+      const nextBoard: Board = {
+        ...board,
+        columnOrder: newOrder,
       };
 
       return {
@@ -305,6 +366,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     });
     return result;
   },
+  //
+  //  Tag logic
+  //
 
   addTag: ({ name, icon = null, color = null }) => {
     const { boards, activeBoardId } = get();
@@ -530,6 +594,16 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
     return result;
   },
+  selectedFilterTagsIds: [],
+  // toggleFilterTagsIds: (tagid) => {
+  //   set((state) => {
+  //     return state;
+  //   });
+  // },
+
+  //
+  //  Issue logic
+  //
   addIssue: ({
     title,
     columnId,
@@ -650,44 +724,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
           },
         },
       };
-      return {
-        boards: {
-          ...boards,
-          [activeBoardId]: nextBoard,
-        },
-      };
-    });
-  },
-  moveColumn: ({ oldIndex, newIndex }) => {
-    set((state) => {
-      const { activeBoardId, boards } = state;
-
-      if (!activeBoardId) return state;
-
-      const board = boards[activeBoardId];
-      if (!board) return state;
-
-      const order = board.columnOrder;
-
-      if (
-        oldIndex === newIndex ||
-        oldIndex < 0 ||
-        newIndex < 0 ||
-        oldIndex >= order.length ||
-        newIndex >= order.length
-      ) {
-        return state;
-      }
-
-      const newOrder = [...order];
-      const [moved] = newOrder.splice(oldIndex, 1);
-      newOrder.splice(newIndex, 0, moved);
-
-      const nextBoard: Board = {
-        ...board,
-        columnOrder: newOrder,
-      };
-
       return {
         boards: {
           ...boards,

@@ -20,6 +20,7 @@ import { useBoardStore } from "@/store/board-store";
 import { useDroppable } from "@dnd-kit/core";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export default function BoardColumn({
   column,
@@ -47,7 +48,7 @@ export default function BoardColumn({
       setTimeout(() => {
         inputRef.current?.focus();
         inputRef.current?.select();
-      }, 10);
+      }, 0);
     }
   }, [isEditing]);
   function handleSave() {
@@ -157,7 +158,7 @@ export default function BoardColumn({
       <SortableContext items={issueIds} strategy={verticalListSortingStrategy}>
         <div
           ref={setDroppableRef}
-          className={clsx(
+          className={cn(
             "min-h-80 flex-1 flex gap-2 p-2 flex-col overflow-y-auto border-2",
           )}
         >
