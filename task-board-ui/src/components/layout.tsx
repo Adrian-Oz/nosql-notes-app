@@ -37,7 +37,7 @@ export default function Layout() {
         <Board />
       </div>
       <div className="flex items-center justify-center h-24 bg-(--surface-1) border border-white/5 rounded-xl">
-         The local board will be used to create user board if there is no board
+        The local board will be used to create user board if there is no board
         in DB.
       </div>
     </div>
