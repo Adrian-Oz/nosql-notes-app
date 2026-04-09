@@ -42,10 +42,10 @@ export const guestStrategy = {
         dependencies.hydrateBoards(parsed);
       } catch {
         console.warn("Corrupted localStorage, resetting...");
-        dependencies.createBoard("Base");
+        dependencies.createBoard("LocalStorage");
       }
     } else {
-      dependencies.createBoard("Base");
+      dependencies.createBoard("LocalStorage");
     }
   },
   save(dependencies: StrategyDependencies) {
@@ -62,18 +62,22 @@ export const userStrategy = {
       const docSnapshot = await getDoc(userDocRef);
       if (docSnapshot.exists()) {
         const data = docSnapshot.data();
-        console.log("data exists");
+        // console.log("data exists", data);
         const boards = data.boards;
         if (boards) {
           dependencies.hydrateBoards(boards);
-        } else dependencies.createBoard("fallback");
+        } else {
+          console.log("there is no board to hydrate, use board from demo");
+          // console.log("USE CURENT BOARD ?");
+          // dependencies.createBoard("NoBoards");
+        }
       } else {
-        console.log("user doc does not exist");
-        dependencies.createBoard("fallback");
+        // console.log("user doc does not exist");
+        dependencies.createBoard("UserDocDoesNotExist");
       }
     } catch (error) {
       console.error("Couldnt get document : ", error);
-      dependencies.createBoard("fallback");
+      dependencies.createBoard("CouldntGetDocument");
     }
   },
   save(dependencies: StrategyDependencies) {
@@ -91,6 +95,7 @@ const debouncedSaveUser = debounce(
     try {
       const boards = getBoards();
       await setDoc(docRef, { boards });
+      // console.log(boards);
       console.log("Document successfully written/overwritten!");
     } catch (error) {
       console.error("Error writing document: ", error);
