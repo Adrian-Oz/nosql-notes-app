@@ -73,7 +73,8 @@ export const userStrategy = {
         }
       } else {
         // console.log("user doc does not exist");
-        dependencies.createBoard("UserDocDoesNotExist");
+        console.log("there is no board to hydrate, use board from demo");
+        // dependencies.createBoard("UserDocDoesNotExist");
       }
     } catch (error) {
       console.error("Couldnt get document : ", error);
