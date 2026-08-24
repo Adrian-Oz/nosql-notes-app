@@ -1,6 +1,31 @@
+# Mayor changes, Readme needs update later, 
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
 # Task Board UI
 
 **Work in Progress**  
+
+
 This project is actively being developed. Some features are incomplete or experimental, and the current version should be treated as a demo/prototype of the overall architecture and functionality.
 
 A modern, feature-rich Task board application built with React, TypeScript, and Vite. Manage your projects and tasks with drag-and-drop functionality, tagging, and real-time collaboration support via Firebase.
