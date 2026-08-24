@@ -1,6 +1,6 @@
 # Task Board UI
 
-🚧 **Work in Progress**  
+**Work in Progress**  
 This project is actively being developed. Some features are incomplete or experimental, and the current version should be treated as a demo/prototype of the overall architecture and functionality.
 
 A modern, feature-rich Task board application built with React, TypeScript, and Vite. Manage your projects and tasks with drag-and-drop functionality, tagging, and real-time collaboration support via Firebase.
@@ -10,19 +10,19 @@ A modern, feature-rich Task board application built with React, TypeScript, and 
 ![Vite](https://img.shields.io/badge/Vite-7.2-blue?logo=vite)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## ✨ Current Features
-> ⚠️ Some features are partially implemented and may change as the project evolves.
+##  Current Features
+>  Some features are partially implemented and may change as the project evolves.
 
-- **📌 Task Board**: Organize tasks into customizable columns
-- **🏷️ Smart Tagging**: Create, organize with tags
-- **🎨 Drag & Drop**: Smooth drag-and-drop interface powered by dnd-kit
-- **🔐 Authentication**: Firebase-powered user authentication
-- **🎯 Issue Management**: Create, edit, delete, and organize issues
-- **💾 Multi-Storage**: Support for guest and user-authenticated storage strategies
-- **⚡ Real-time Sync**: Automatic data persistence and synchronization
-- **🎨 Modern UI**: Built with Radix UI and Tailwind CSS
+- ** Task Board**: Organize tasks into customizable columns
+- ** Smart Tagging**: Create, organize with tags
+- ** Drag & Drop**: Smooth drag-and-drop interface powered by dnd-kit
+- ** Authentication**: Firebase-powered user authentication
+- ** Issue Management**: Create, edit, delete, and organize issues
+- ** Multi-Storage**: Support for guest and user-authenticated storage strategies
+- ** Real-time Sync**: Automatic data persistence and synchronization
+- ** Modern UI**: Built with Radix UI and Tailwind CSS
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -60,8 +60,8 @@ A modern, feature-rich Task board application built with React, TypeScript, and 
 
    The app will be available at `http://localhost:5173`
 
-## 📖 Usage
-> ℹ️ This demo version focuses on core task management functionality. Some edge cases and advanced features are still under development.
+##  Usage
+>  This demo version focuses on core task management functionality. Some edge cases and advanced features are still under development.
 ### Creating a Board
 
 1. Start the application - a default board is created automatically
@@ -88,7 +88,7 @@ A modern, feature-rich Task board application built with React, TypeScript, and 
 - Attach tags to issues for better organization
 
 
-## 🏗️ Project Structure
+##  Project Structure
 
 ```
 src/
@@ -117,7 +117,7 @@ src/
 └── App.tsx              # Root component
 ```
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 ### Frontend
 - **React 19**: UI library
@@ -144,7 +144,7 @@ src/
 - **ESLint**: Code linting
 - **TypeScript**: Static type checking
 
-## 📝 Available Scripts
+##  Available Scripts
 
 ```bash
 # Start development server with hot module replacement
@@ -160,7 +160,7 @@ npm run preview
 npm run lint
 ```
 
-## 🎯 State Management
+##  State Management
 
 The app uses **Zustand** for global state management. The main store (`useBoardStore`) handles:
 
@@ -180,7 +180,7 @@ const activeBoard = useBoardStore((state) => state.getActiveBoard());
 const createIssue = useBoardStore((state) => state.addIssue);
 ```
 
-## 🔐 Authentication
+##  Authentication
 
 The app supports two modes:
 
@@ -189,7 +189,7 @@ The app supports two modes:
 
 User state is managed by `useAuthStore` in `features/auth/useAuthStore.ts`
 
-## 🎨 Styling
+##  Styling
 
 The project uses **Tailwind CSS** with custom configuration:
 
@@ -198,7 +198,7 @@ The project uses **Tailwind CSS** with custom configuration:
 - Custom animations
 - CSS scrollbar styling
 
-## 🚀 Building for Production
+##  Building for Production
 
 ```bash
 npm run build
@@ -219,11 +219,11 @@ This command:
 
 
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🚧 Project Status
+##  Project Status
 
 This project is currently in active development and serves as a learning-focused full-stack application.
 
@@ -241,7 +241,7 @@ This project is currently in active development and serves as a learning-focused
 
 The goal of this project is not only to build a functional application, but also to explore scalable state management, data modeling, and full-stack architecture patterns.
 
-## 💡 Future Enhancements
+##  Future Enhancements
 
 - [ ] Real-time collaboration
 - [ ] Comments and mentions on issues
@@ -252,11 +252,11 @@ The goal of this project is not only to build a functional application, but also
 - [ ] Keyboard shortcuts
 - [ ] Undo/redo functionality
 
-## 👤 Author
+##  Author
 
 Created with ❤️ by [Adrian Ozorek]
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - [Vite](https://vitejs.dev/) for the blazing fast build tool
 - [React](https://react.dev/) for the UI library
