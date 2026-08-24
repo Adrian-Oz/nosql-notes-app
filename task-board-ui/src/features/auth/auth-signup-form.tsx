@@ -16,14 +16,14 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Button } from "../../components/ui/button";
-import { useAuthActions } from "./authActions";
+// import { useAuthActions } from "./authActions";
 
 export default function RegisterForm({
   handleRegisterFlag,
 }: {
   handleRegisterFlag: Dispatch<SetStateAction<boolean>>;
 }) {
-  const { signUp } = useAuthActions();
+  // const { signUp } = useAuthActions();
   const toggleAuthModal = useAuthModalStore((s) => s.toggleAuthModal);
   const signUpSchema = z
     .object({
@@ -57,7 +57,7 @@ export default function RegisterForm({
       };
       console.log("IM TRYING");
       try {
-        await signUp(body);
+        // await signUp(body);
         toast.success("Account created! You are now logged in.");
         toggleAuthModal();
       } catch (error) {

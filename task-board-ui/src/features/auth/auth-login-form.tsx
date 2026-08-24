@@ -15,7 +15,7 @@ import { Button } from "../../components/ui/button";
 import { Github } from "lucide-react";
 import { useAuthModalStore } from "./useAuthStore";
 import { toast } from "sonner";
-import { useAuthActions } from "./authActions";
+// import { useAuthActions } from "./authActions";
 import { FirebaseError } from "firebase/app";
 
 export default function LoginForm({
@@ -23,7 +23,7 @@ export default function LoginForm({
 }: {
   hanldeRegisterFlag: Dispatch<SetStateAction<boolean>>;
 }) {
-  const { signIn } = useAuthActions();
+  // const { signIn } = useAuthActions();
   const toggleAuthModal = useAuthModalStore((s) => s.toggleAuthModal);
   const loginSchema = z.object({
     email: z.email(),
@@ -47,7 +47,7 @@ export default function LoginForm({
         password: values.value.password,
       };
       try {
-        await signIn(body);
+        // await signIn(body);
         toast.success("Successfully logged in!");
         toggleAuthModal();
       } catch (error) {
